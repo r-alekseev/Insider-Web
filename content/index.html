@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Insider</title>
+    <script type="text/javascript">
+        var ws = new WebSocket("ws://localhost:8888/ui-streaming");
+
+
+        ws.onopen = function() {
+        };
+
+        ws.onmessage = function (evt) {
+            var received_msg = evt.data;
+
+        };
+
+        ws.onclose = function() {
+        };
+    </script>
+</head>
+<body>
+
+</body>
+</html>
