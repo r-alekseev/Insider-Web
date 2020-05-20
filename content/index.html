@@ -1,24 +1,92 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html ng-app="insider">
 <head>
     <title>Insider</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.9/angular.min.js"></script>
+
     <script type="text/javascript">
-        var ws = new WebSocket("ws://localhost:8888/ui-streaming");
 
+        var app = angular.module('insider', []);
 
-        ws.onopen = function() {
-        };
+        app.controller('main', ['$scope', function ($scope) {
+            $scope.states = [];
+            $scope.metrics = [];
 
-        ws.onmessage = function (evt) {
-            var received_msg = evt.data;
+            var ws = new WebSocket("ws://localhost:8888/insider/ui-streaming");
 
-        };
+            ws.onmessage = function (e) {
+                $scope.$apply(function () {
+                    // console.log(e.data);
+                    var notification = JSON.parse(e.data);
+                    // console.log(notification);
+                    update(notification);
+                });
+            };
 
-        ws.onclose = function() {
-        };
+            function update(notification) {
+                if (notification.method == "state-set") {
+                    merge_states($scope.states, notification);
+                } else if (notification.method == "metric-set") {
+                    merge_metrics($scope.metrics, notification);
+                }
+            }
+
+            function merge_states(states, notification) {
+                for (let i = 0; i < states.length; i++) {
+                    if (states[i].key == notification.params.key) {
+                        states[i].value = notification.params.value;
+                        return;
+                    }
+                }
+                states.push({
+                    key: notification.params.key,
+                    value: notification.params.value
+                });
+            }
+
+            function merge_metrics(metrics, notification) {
+                for (let i = 0; i < metrics.length; i++) {
+                    if (metrics[i].key == notification.params.key) {
+                        metrics[i].count = notification.params.count;
+                        metrics[i].duration = notification.params.duration;
+                        return;
+                    }
+                }
+                metrics.push({
+                    key: notification.params.key,
+                    count: notification.params.count,
+                    duration: notification.params.duration
+                });
+            }
+        }]);
+
     </script>
 </head>
-<body>
+<body ng-controller="main">
+    <div>
+        <table border="1">
+            <tr>
+                <th colspan="2">States</th>
+            <tr>
+            <tr ng-repeat="state in states">
+                <td>{{state.key}}</td>
+                <td>{{state.value}}</td>
+            </tr>
+        </table>
+    </div>
 
+    <div>
+        <table border="1">
+            <tr>
+                <th colspan="2">Metrics</th>
+            <tr>
+            <tr ng-repeat="metric in metrics">
+                <td>{{metric.key}}</td>
+                <td>{{metric.count}}</td>
+                <td>{{metric.duration}}</td>
+            </tr>
+        </table>
+    </div>
 </body>
 </html>
